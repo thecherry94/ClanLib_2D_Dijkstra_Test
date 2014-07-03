@@ -18,4 +18,6 @@ class Tile
 
 		bool is_walkable() { return m_walkable; }
 		void set_walkable(bool b) { m_walkable = b; }
+
+		std::vector<Tile*> get_adjacent_tiles(bool walkable);
 };

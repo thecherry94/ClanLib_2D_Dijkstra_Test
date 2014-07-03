@@ -1,4 +1,5 @@
 #include "Tilemap.hpp"
+#include <fstream>
 
 
 Tilemap::Tilemap()
@@ -21,10 +22,8 @@ void Tilemap::build_map(int size)
 			m_pTiles[i][j]->init(this, get_id_by_array_pos(i, j), true);
 		}
 	}
-
+	
 	make_rect_wall(0, 899);
-	make_rect_wall(45, 70);
-	fill_rect_wall(45, 70);
 }
 
 
@@ -63,8 +62,8 @@ Tile* Tilemap::get_tile_by_id(int id)
 	if(id == 0)
 		return m_pTiles[0][0];
 
-	int x = id / (m_size - 1);
-	int y = id % (m_size - 1);
+	int x = id % (m_size);
+	int y = id / (m_size);
 
 	return m_pTiles[x][y];
 }
@@ -72,8 +71,8 @@ Tile* Tilemap::get_tile_by_id(int id)
 
 std::vector<Tile*> Tilemap::get_adjacent_tiles(int id, bool walkable)
 {
-	int x = id / (m_size);
-	int y = id % (m_size);
+	int x = id % (m_size);
+	int y = id / (m_size);
 	std::vector<Tile*> retval;
 
 
@@ -139,26 +138,24 @@ void Tilemap::make_rect_wall(int start_id, int end_id)
 	if(start_id > m_size * m_size || end_id > m_size * m_size)
 		return;
 
-	int start_x = start_id / (m_size);
-	int start_y = start_id % (m_size);
-	int end_x = end_id / (m_size );
-	int end_y = end_id % (m_size);
+	int start_x = start_id % (m_size);
+	int start_y = start_id / (m_size);
+	int end_x = end_id % (m_size);
+	int end_y = end_id / (m_size);
 
-	/*
-	for(int i = start_y; i < end_y; i++)
-		m_pTiles[i][start_x]->set_walkable(false);
+	
+	for(int i = start_x; i <= end_x; i++)
+		m_pTiles[i][start_y]->set_walkable(false);
 
-	for(int i = start_y; i < end_y; i++)
-		m_pTiles[i][start_x+end_x]->set_walkable(false);
+	for(int i = start_x; i <= end_x; i++)
+		m_pTiles[i][end_y]->set_walkable(false);
 
-	for(int i = start_x; i < end_x; i++)
-		m_pTiles[start_y][i]->set_walkable(false);
+	for(int i = start_y; i <= end_y; i++)
+		m_pTiles[start_x][i]->set_walkable(false);
 
-	for(int i = start_x; i < end_x; i++)
-		m_pTiles[start_y+(end_y-start_y)][i]->set_walkable(false);
-
-	m_pTiles[end_y][end_x]->set_walkable(false);
-	*/
+	for(int i = start_y; i <= end_y; i++)
+		m_pTiles[end_x][i]->set_walkable(false);
+	
 }
 
 
@@ -167,12 +164,12 @@ void Tilemap::fill_rect_wall(int start_id, int end_id)
 	if(start_id > m_size * m_size || end_id > m_size * m_size)
 		return;
 
-	int start_x = start_id / (m_size);
-	int start_y = start_id % (m_size);
-	int end_x = end_id / (m_size);
-	int end_y = end_id % (m_size);
+	int start_x = start_id % (m_size);
+	int start_y = start_id / (m_size);
+	int end_x = end_id % (m_size);
+	int end_y = end_id / (m_size);
 
-	/*
+	
 	for(int i = start_x; i < end_x; i++)
 	{
 		for(int j = start_y; j < end_y; j++)
@@ -180,5 +177,24 @@ void Tilemap::fill_rect_wall(int start_id, int end_id)
 			m_pTiles[i][j]->set_walkable(false);
 		}
 	}
-	*/
+	
+}
+
+
+clan::Point Tilemap::world_to_tilemap_position(float x, float y)
+{
+	return clan::Point(x / m_size, y / m_size);
+}
+
+
+int Tilemap::worldpos_to_tilemap_id(float x, float y)
+{
+	clan::Point p = world_to_tilemap_position(x, y);
+	return get_id_by_array_pos(p.x, p.y);
+}
+
+
+Tile* Tilemap::get_tile_from_worldpos(float x, float y)
+{
+	return get_tile_by_id(worldpos_to_tilemap_id(x, y));
 }
