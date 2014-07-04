@@ -17,6 +17,8 @@ class Tilemap
 		clan::Point world_to_tilemap_position(float x, float y);
 		int worldpos_to_tilemap_id(float x, float y);
 
+		std::vector<Tile*> make_path_recursively(Tile* tile, std::vector<Tile*> tail);
+
 	public:
 		Tilemap();
 
@@ -30,7 +32,8 @@ class Tilemap
 		void make_rect_wall_by_arraypos(int start_x, int start_y, int end_x, int end_y);
 		void fill_rect_wall(int start_id, int end_id);
 		void fill_rect_wall_by_arraypos(int start_x, int start_y, int end_x, int end_y);
-		
-		std::vector<Tile*> get_path_dijkstra(int start_id, int end_id);
+
+
+		std::vector<Tile*> get_path_astar(int start_id, int end_id);
 
 };

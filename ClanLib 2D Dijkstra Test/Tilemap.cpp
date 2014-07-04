@@ -23,7 +23,11 @@ void Tilemap::build_map(int size)
 		}
 	}
 
-	make_rect_wall_by_arraypos(0, 0, 29, 29);
+	make_rect_wall(14, 884); 
+
+	std::vector<Tile*> path = get_path_astar(1, 27);
+	for(int i = 0; i < path.size(); i++)
+		path[i]->set_walkable(false);
 }
 
 
@@ -187,9 +191,110 @@ void Tilemap::fill_rect_wall(int start_id, int end_id)
 }
 
 
-std::vector<Tile*> Tilemap::get_path_dijkstra(int start_id, int end_id)
+std::vector<Tile*> Tilemap::get_path_astar(int start_id, int end_id)
 {
+	bool success = false;
 
+	Tile* start_tile = get_tile_by_id(start_id);
+	Tile* end_tile = get_tile_by_id(end_id);
+
+	int goal_x = end_id % (m_size);
+	int goal_y = end_id / (m_size);
+
+	std::list<Tile*> open;
+	std::list<Tile*> closed;
+	open.push_back(start_tile);
+
+
+	// Repeat while the open list has elements and the goal tile isn't in the closed list
+	while(!open.empty() && std::find(closed.begin(), closed.end(), end_tile) == closed.end())
+	{
+		// Get tile with the lowest F score from the open list
+		int lowest_fscore = (*open.begin())->get_astar_info().F();
+		Tile* lowest_fscore_tile = (*open.begin());
+		std::list<Tile*>::iterator it;
+		for(it = open.begin(); it != open.end(); it++)
+		{
+			Tile* t = *it;
+			if(t->get_astar_info().F() < lowest_fscore)
+			{
+				lowest_fscore = t->get_astar_info().F();
+				lowest_fscore_tile = t;
+			}
+		}
+
+		// Move the current tile to the closed list and mark it as visited
+		Tile* current_tile = lowest_fscore_tile;	
+		open.remove(current_tile);
+		closed.push_back(current_tile);
+		current_tile->get_astar_info().visited = true;
+
+		// For each adjacent tile of the current tile that is not a wall
+		std::vector<Tile*> adj_tiles = current_tile->get_adjacent_tiles(true);
+		for(int i = 0; i < adj_tiles.size(); i++)
+		{
+			Tile* t = adj_tiles[i];
+
+			// Ignore the following steps if tile was already visited or is in the closed list
+			if(t->get_astar_info().visited || std::find(closed.begin(), closed.end(), t) != closed.end())
+				continue;
+			
+			// if the adjacent tile isn't on the open nor on the closed list yet
+			if(std::find(open.begin(), open.end(), t) == open.end())
+			{
+				// Add this adjacent tile to the open list
+				open.push_back(t);
+
+				// Mark the adjacent tile as child of the current tile
+				t->get_astar_info().previous_tile = current_tile;
+
+				// Calculate the G score
+				t->get_astar_info().G = current_tile->get_astar_info().G + 1;
+
+				// Calculate the H score
+				int t_x = start_id % (m_size);
+				int t_y = start_id / (m_size);
+				int diff_x = goal_x - t_x;
+				int diff_y = goal_y - t_y;
+				t->get_astar_info().H = sqrt(diff_x * diff_x - diff_y * diff_y);
+			}
+			// if the adjacent tile is on the open list already
+			else
+			{
+				// if the G score of the current tile is lower than that of the adjacent tile
+				if(current_tile->get_astar_info().G < t->get_astar_info().G)
+				{
+					// Mark the adjacent tile as child of the current tile
+					t->get_astar_info().previous_tile = current_tile;
+				}
+			}
+
+		}
+	}
+
+
+	// A path has been found
+	if(std::find(closed.begin(), closed.end(), end_tile) != closed.end())
+		success = true;
+
+	if(success)
+	{
+		std::vector<Tile*> path;
+		return make_path_recursively(end_tile, path);
+	}
+
+	return std::vector<Tile*>();
+}
+
+
+std::vector<Tile*> Tilemap::make_path_recursively(Tile* tile, std::vector<Tile*> tail)
+{
+	tail.push_back(tile);
+	if(tile->get_astar_info().previous_tile != NULL)
+		return make_path_recursively(tile->get_astar_info().previous_tile, tail);
+
+	std::reverse(tail.begin(), tail.end());
+	return tail;
 }
 
 

@@ -3,6 +3,7 @@
 
 Tile::Tile()
 {
+	m_astarInfo = AStarInfo();
 }
 
 
