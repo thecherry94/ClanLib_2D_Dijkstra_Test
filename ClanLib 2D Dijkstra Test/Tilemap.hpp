@@ -15,8 +15,8 @@ class Tilemap
 		Tile* get_tile_by_id(int id);
 		int get_id_by_array_pos(int x, int y);
 
-		clan::Point world_to_tilemap_position(float x, float y);
-		int worldpos_to_tilemap_id(float x, float y);
+		clan::Point world_to_tilemap_position(int x, int y);
+		int worldpos_to_tilemap_id(int x, int y);
 
 		std::vector<Tile*> make_path_recursively(Tile* tile, std::vector<Tile*> tail);
 

@@ -40,11 +40,9 @@ void Tilemap::update(clan::InputContext ic)
 		get_tile_from_worldpos(mouse.get_position().x, mouse.get_position().y)->set_walkable(true);
 	}
 
-	if(!space)
+	if(kb.get_keycode(clan::keycode_r))
 	{
-		if(kb.get_keycode(clan::keycode_space))
-		{
-			for(int i = 0; i < m_size; i++)
+		for(int i = 0; i < m_size; i++)
 			{
 				for(int j = 0; j < m_size; j++)
 				{
@@ -53,7 +51,12 @@ void Tilemap::update(clan::InputContext ic)
 					current_tile->get_astar_info().reset();
 				}
 			}
+	}
 
+	if(!space)
+	{
+		if(kb.get_keycode(clan::keycode_space))
+		{
 			std::vector<Tile*> path = get_path_astar(0, 899);
 			for(int i = 0; i < path.size(); i++)
 				path[i]->get_astar_info().mark_path = true;
@@ -305,11 +308,12 @@ std::vector<Tile*> Tilemap::get_path_astar(int start_id, int end_id)
 				t->get_astar_info().G = current_tile->get_astar_info().G + 1;
 
 				// Calculate the H score
-				int t_x = start_id % (m_size);
-				int t_y = start_id / (m_size);
+				int t_x = t->get_id() % (m_size);
+				int t_y = t->get_id() / (m_size);
 				int diff_x = goal_x - t_x;
 				int diff_y = goal_y - t_y;
-				t->get_astar_info().H = sqrt(diff_x * diff_x - diff_y * diff_y);
+				int dist = sqrt(diff_x * diff_x + diff_y * diff_y);
+				t->get_astar_info().H = dist;
 			}
 			// if the adjacent tile is in the open list already
 			else
@@ -360,13 +364,13 @@ void Tilemap::fill_rect_wall_by_arraypos(int start_x, int start_y, int end_x, in
 }
 
 
-clan::Point Tilemap::world_to_tilemap_position(float x, float y)
+clan::Point Tilemap::world_to_tilemap_position(int x, int y)
 {
-	return clan::Point(x / m_size, y / m_size);
+	return clan::Point(x / m_tileSize , y / m_tileSize);
 }
 
 
-int Tilemap::worldpos_to_tilemap_id(float x, float y)
+int Tilemap::worldpos_to_tilemap_id(int x, int y)
 {
 	clan::Point p = world_to_tilemap_position(x, y);
 	return get_id_by_array_pos(p.x, p.y);
@@ -375,5 +379,6 @@ int Tilemap::worldpos_to_tilemap_id(float x, float y)
 
 Tile* Tilemap::get_tile_from_worldpos(float x, float y)
 {
-	return get_tile_by_id(worldpos_to_tilemap_id(x, y));
+	clan::Point p = world_to_tilemap_position(x, y);
+	return m_pTiles[p.x][p.y];
 }
