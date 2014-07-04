@@ -27,5 +27,10 @@ class Tilemap
 		Tile* get_tile_from_worldpos(float x, float y);
 		std::vector<Tile*> get_adjacent_tiles(int id, bool walkable);
 		void make_rect_wall(int start_id, int end_id);
+		void make_rect_wall_by_arraypos(int start_x, int start_y, int end_x, int end_y);
 		void fill_rect_wall(int start_id, int end_id);
+		void fill_rect_wall_by_arraypos(int start_x, int start_y, int end_x, int end_y);
+		
+		std::vector<Tile*> get_path_dijkstra(int start_id, int end_id);
+
 };

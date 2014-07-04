@@ -22,8 +22,8 @@ void Tilemap::build_map(int size)
 			m_pTiles[i][j]->init(this, get_id_by_array_pos(i, j), true);
 		}
 	}
-	
-	make_rect_wall(0, 899);
+
+	make_rect_wall_by_arraypos(0, 0, 29, 29);
 }
 
 
@@ -159,6 +159,12 @@ void Tilemap::make_rect_wall(int start_id, int end_id)
 }
 
 
+void Tilemap::make_rect_wall_by_arraypos(int start_x, int start_y, int end_x, int end_y)
+{
+	make_rect_wall(get_id_by_array_pos(start_x, start_y), get_id_by_array_pos(end_x, end_y));
+}
+
+
 void Tilemap::fill_rect_wall(int start_id, int end_id)
 {
 	if(start_id > m_size * m_size || end_id > m_size * m_size)
@@ -170,14 +176,26 @@ void Tilemap::fill_rect_wall(int start_id, int end_id)
 	int end_y = end_id / (m_size);
 
 	
-	for(int i = start_x; i < end_x; i++)
+	for(int i = start_x; i <= end_x; i++)
 	{
-		for(int j = start_y; j < end_y; j++)
+		for(int j = start_y; j <= end_y; j++)
 		{
 			m_pTiles[i][j]->set_walkable(false);
 		}
 	}
 	
+}
+
+
+std::vector<Tile*> Tilemap::get_path_dijkstra(int start_id, int end_id)
+{
+
+}
+
+
+void Tilemap::fill_rect_wall_by_arraypos(int start_x, int start_y, int end_x, int end_y)
+{
+	fill_rect_wall(get_id_by_array_pos(start_x, start_y), get_id_by_array_pos(end_x, end_y));
 }
 
 
