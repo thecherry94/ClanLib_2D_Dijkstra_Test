@@ -15,7 +15,7 @@ void Tile::init(Tilemap* pMap, int id, bool walk)
 }
 
 
-std::vector<Tile*> Tile::get_adjacent_tiles(bool walkable)
+std::vector<Tile*> Tile::get_adjacent_tiles(bool walkable, bool diagonal)
 {
-	return m_pTilemap->get_adjacent_tiles(m_id, walkable);
+	return m_pTilemap->get_adjacent_tiles(m_id, walkable, diagonal);
 }

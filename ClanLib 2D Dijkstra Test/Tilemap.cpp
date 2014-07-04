@@ -5,6 +5,7 @@
 Tilemap::Tilemap()
 {
 	m_tileSize = 16;
+	space = false;
 }
 
 void Tilemap::build_map(int size)
@@ -22,12 +23,49 @@ void Tilemap::build_map(int size)
 			m_pTiles[i][j]->init(this, get_id_by_array_pos(i, j), true);
 		}
 	}
+}
 
-	make_rect_wall(14, 884); 
 
-	std::vector<Tile*> path = get_path_astar(1, 27);
-	for(int i = 0; i < path.size(); i++)
-		path[i]->set_walkable(false);
+void Tilemap::update(clan::InputContext ic)
+{
+	clan::InputDevice mouse = ic.get_mouse();
+	clan::InputDevice kb = ic.get_keyboard();
+
+	if(mouse.get_keycode(clan::mouse_left))
+	{
+		get_tile_from_worldpos(mouse.get_position().x, mouse.get_position().y)->set_walkable(false);
+	}
+	else if(mouse.get_keycode(clan::mouse_right))
+	{
+		get_tile_from_worldpos(mouse.get_position().x, mouse.get_position().y)->set_walkable(true);
+	}
+
+	if(!space)
+	{
+		if(kb.get_keycode(clan::keycode_space))
+		{
+			for(int i = 0; i < m_size; i++)
+			{
+				for(int j = 0; j < m_size; j++)
+				{
+					Tile* current_tile = m_pTiles[i][j];					
+					current_tile->get_astar_info().mark_path = false;
+					current_tile->get_astar_info().reset();
+				}
+			}
+
+			std::vector<Tile*> path = get_path_astar(0, 899);
+			for(int i = 0; i < path.size(); i++)
+				path[i]->get_astar_info().mark_path = true;
+
+			space = true;
+		}
+	}
+	else
+	{
+		if(!kb.get_keycode(clan::keycode_space))
+			space = false;
+	}
 }
 
 
@@ -38,7 +76,13 @@ void Tilemap::draw(clan::Canvas c)
 		for(int j = 0; j < m_size; j++)
 		{
 			Tile* current_tile = m_pTiles[i][j];
-			clan::Colorf draw_color = current_tile->is_walkable() ? clan::Colorf::green : clan::Colorf::red;
+			clan::Colorf draw_color; 
+			if(current_tile->get_astar_info().mark_path)
+				draw_color = clan::Colorf::yellow;
+			else if(current_tile->is_walkable()) 
+				draw_color = clan::Colorf::green;
+			else
+				draw_color = clan::Colorf::red;
 
 			c.fill_rect(clan::Rect(clan::Point(i * m_tileSize, j * m_tileSize), clan::Size(m_tileSize, m_tileSize)), draw_color);
 		}
@@ -66,56 +110,34 @@ Tile* Tilemap::get_tile_by_id(int id)
 	if(id == 0)
 		return m_pTiles[0][0];
 
-	int x = id % (m_size);
-	int y = id / (m_size);
+	int x = abs(id % (m_size));
+	int y = abs(id / (m_size));
 
-	return m_pTiles[x][y];
+	if(x >= m_size || y >= m_size)
+		return NULL;
+
+	return m_pTiles[y][x];
 }
 
 
-std::vector<Tile*> Tilemap::get_adjacent_tiles(int id, bool walkable)
+std::vector<Tile*> Tilemap::get_adjacent_tiles(int id, bool walkable, bool diagonal)
 {
 	int x = id % (m_size);
 	int y = id / (m_size);
 	std::vector<Tile*> retval;
 
 
-	if(x != 0)
-	{
-		if(walkable)
-		{
-			if(m_pTiles[x-1][y]->is_walkable())
-				retval.push_back(m_pTiles[x-1][y]);
-		}
-		else
-		{
-			retval.push_back(m_pTiles[x-1][y]);
-		}
-	}
-
-	if(x != m_size - 1)
-	{
-		if(walkable)
-		{
-			if(m_pTiles[x+1][y]->is_walkable())
-				retval.push_back(m_pTiles[x+1][y]);
-		}
-		else
-		{
-			retval.push_back(m_pTiles[x+1][y]);
-		}
-	}
-
 	if(y != 0)
 	{
 		if(walkable)
 		{
-			if(m_pTiles[x][y-1]->is_walkable())
-				retval.push_back(m_pTiles[x][y-1]);
+			if(m_pTiles[y-1][x]->is_walkable())
+				retval.push_back(m_pTiles[y-1][x]);
+
 		}
 		else
 		{
-			retval.push_back(m_pTiles[x][y-1]);
+			retval.push_back(m_pTiles[y-1][x]);
 		}
 	}
 
@@ -123,15 +145,41 @@ std::vector<Tile*> Tilemap::get_adjacent_tiles(int id, bool walkable)
 	{
 		if(walkable)
 		{
-			if(m_pTiles[x][y+1]->is_walkable())
-				retval.push_back(m_pTiles[x][y+1]);
+			if(m_pTiles[y+1][x]->is_walkable())
+				retval.push_back(m_pTiles[y+1][x]);
 		}
 		else
 		{
-			retval.push_back(m_pTiles[x][y+1]);
+			retval.push_back(m_pTiles[y+1][x]);
 		}
 	}
 
+	if(x != 0)
+	{
+		if(walkable)
+		{
+			if(m_pTiles[y][x-1]->is_walkable())
+				retval.push_back(m_pTiles[y][x-1]);
+
+		}
+		else
+		{
+			retval.push_back(m_pTiles[y][x-1]);
+		}
+	}
+
+	if(x != m_size - 1)
+	{
+		if(walkable)
+		{
+			if(m_pTiles[y][x+1]->is_walkable())
+				retval.push_back(m_pTiles[y][x+1]);
+		}
+		else
+		{
+			retval.push_back(m_pTiles[y][x+1]);
+		}
+	}
 
 	return retval;
 }
@@ -193,14 +241,18 @@ void Tilemap::fill_rect_wall(int start_id, int end_id)
 
 std::vector<Tile*> Tilemap::get_path_astar(int start_id, int end_id)
 {
+	// determines whether the search was successfull
 	bool success = false;
 
+	// get the start and goal tile
 	Tile* start_tile = get_tile_by_id(start_id);
 	Tile* end_tile = get_tile_by_id(end_id);
 
+	// get their position
 	int goal_x = end_id % (m_size);
 	int goal_y = end_id / (m_size);
 
+	// Create two lists; open and closed; add the start tile to the open list
 	std::list<Tile*> open;
 	std::list<Tile*> closed;
 	open.push_back(start_tile);
@@ -224,13 +276,14 @@ std::vector<Tile*> Tilemap::get_path_astar(int start_id, int end_id)
 		}
 
 		// Move the current tile to the closed list and mark it as visited
+		// already visited tiles will never be visited again
 		Tile* current_tile = lowest_fscore_tile;	
 		open.remove(current_tile);
 		closed.push_back(current_tile);
 		current_tile->get_astar_info().visited = true;
 
-		// For each adjacent tile of the current tile that is not a wall
-		std::vector<Tile*> adj_tiles = current_tile->get_adjacent_tiles(true);
+		// For each adjacent tile of the current tile that is also not a wall
+		std::vector<Tile*> adj_tiles = current_tile->get_adjacent_tiles(true, true);
 		for(int i = 0; i < adj_tiles.size(); i++)
 		{
 			Tile* t = adj_tiles[i];
@@ -258,7 +311,7 @@ std::vector<Tile*> Tilemap::get_path_astar(int start_id, int end_id)
 				int diff_y = goal_y - t_y;
 				t->get_astar_info().H = sqrt(diff_x * diff_x - diff_y * diff_y);
 			}
-			// if the adjacent tile is on the open list already
+			// if the adjacent tile is in the open list already
 			else
 			{
 				// if the G score of the current tile is lower than that of the adjacent tile
@@ -273,16 +326,19 @@ std::vector<Tile*> Tilemap::get_path_astar(int start_id, int end_id)
 	}
 
 
-	// A path has been found
+	// is the goal tile in the closed list? if yes, a path has been found
 	if(std::find(closed.begin(), closed.end(), end_tile) != closed.end())
 		success = true;
 
+	// if path has been found
 	if(success)
 	{
+		// return the path as a vector using a recursive function
 		std::vector<Tile*> path;
 		return make_path_recursively(end_tile, path);
 	}
 
+	// if no path was found, return an empty vector
 	return std::vector<Tile*>();
 }
 

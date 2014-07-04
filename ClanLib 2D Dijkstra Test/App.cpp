@@ -20,6 +20,7 @@ int App::main(const std::vector<std::string>& args)
 		canvas.clear();
 
 		map.draw(canvas);
+		map.update(win.get_ic());
 
 		win.flip();
 		clan::KeepAlive::process();
