@@ -82,7 +82,6 @@
     <ClInclude Include="Program.hpp" />
     <ClInclude Include="Tile.hpp" />
     <ClInclude Include="Tilemap.hpp" />
-    <ClInclude Include="TilemapWalker.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
@@ -90,7 +89,6 @@
     <ClCompile Include="Program.cpp" />
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="Tilemap.cpp" />
-    <ClCompile Include="TilemapWalker.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

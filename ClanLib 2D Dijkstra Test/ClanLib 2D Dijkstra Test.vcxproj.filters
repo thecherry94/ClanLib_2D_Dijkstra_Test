@@ -33,9 +33,6 @@
     <ClInclude Include="AStarInfo.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="TilemapWalker.hpp">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp">
@@ -51,9 +48,6 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="Tile.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="TilemapWalker.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>

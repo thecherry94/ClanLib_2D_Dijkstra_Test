@@ -2,10 +2,8 @@
 
 #include "precomp.hpp"
 #include "Tile.hpp"
-#include "TilemapWalker.hpp"
 
 class Tile;
-class TilemapWalker;
 class Tilemap
 {
 	private:
@@ -14,8 +12,11 @@ class Tilemap
 		Tile*** m_pTiles;
 		bool space;
 
-		TilemapWalker* m_mapWalker;
-		
+		Tile* get_tile_by_id(int id);
+		int get_id_by_array_pos(int x, int y);
+
+		clan::Point world_to_tilemap_position(int x, int y);
+		int worldpos_to_tilemap_id(int x, int y);
 
 		std::vector<Tile*> make_path_recursively(Tile* tile, std::vector<Tile*> tail);
 
@@ -23,7 +24,7 @@ class Tilemap
 		Tilemap();
 
 		void draw(clan::Canvas c);
-		void update(clan::InputContext ic, float delta);
+		void update(clan::InputContext ic);
 		void build_map(int size);
 		void reset();
 
@@ -33,12 +34,7 @@ class Tilemap
 		void make_rect_wall_by_arraypos(int start_x, int start_y, int end_x, int end_y);
 		void fill_rect_wall(int start_id, int end_id);
 		void fill_rect_wall_by_arraypos(int start_x, int start_y, int end_x, int end_y);
-		Tile* get_tile_by_id(int id);
-		int get_id_by_array_pos(int x, int y);
-		clan::Point get_worldpos_by_id(int id);
 
-		clan::Point world_to_tilemap_position(int x, int y);
-		int worldpos_to_tilemap_id(int x, int y);
 
 		std::vector<Tile*> get_path_astar(int start_id, int end_id, bool allow_diagonal_movement);
 

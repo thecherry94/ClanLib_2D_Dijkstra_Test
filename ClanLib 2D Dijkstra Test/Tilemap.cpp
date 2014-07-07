@@ -13,8 +13,6 @@ void Tilemap::build_map(int size)
 	reset();
 	m_size = size;
 
-	m_mapWalker = new TilemapWalker(this);
-
 	m_pTiles = new Tile**[m_size];
 	for(int i = 0; i < m_size; i++)
 	{
@@ -28,7 +26,7 @@ void Tilemap::build_map(int size)
 }
 
 
-void Tilemap::update(clan::InputContext ic, float delta)
+void Tilemap::update(clan::InputContext ic)
 {
 	clan::InputDevice mouse = ic.get_mouse();
 	clan::InputDevice kb = ic.get_keyboard();
@@ -64,8 +62,6 @@ void Tilemap::update(clan::InputContext ic, float delta)
 				path[i]->get_astar_info().mark_path = true;
 
 			space = true;
-
-			m_mapWalker->start_walk(get_worldpos_by_id(899));
 		}
 	}
 	else
@@ -73,8 +69,6 @@ void Tilemap::update(clan::InputContext ic, float delta)
 		if(!kb.get_keycode(clan::keycode_space))
 			space = false;
 	}
-	
-	m_mapWalker->update(delta);
 }
 
 
@@ -96,8 +90,6 @@ void Tilemap::draw(clan::Canvas c)
 			c.fill_rect(clan::Rect(clan::Point(i * m_tileSize, j * m_tileSize), clan::Size(m_tileSize, m_tileSize)), draw_color);
 		}
 	}
-
-	m_mapWalker->draw(c);
 }
 
 
@@ -285,7 +277,7 @@ void Tilemap::make_rect_wall_by_arraypos(int start_x, int start_y, int end_x, in
 
 
 void Tilemap::fill_rect_wall(int start_id, int end_id)
-{ 
+{
 	if(start_id > m_size * m_size || end_id > m_size * m_size)
 		return;
 
@@ -418,20 +410,6 @@ std::vector<Tile*> Tilemap::make_path_recursively(Tile* tile, std::vector<Tile*>
 		return make_path_recursively(tile->get_astar_info().previous_tile, tail);
 
 	std::reverse(tail.begin(), tail.end());
-
-
-	// All tiles need to be reset in order for the algorithm to work again
-	//
-	for(int i = 0; i < m_size; i++)
-	{
-		for(int j = 0; j < m_size; j++)
-		{
-			Tile* current_tile = m_pTiles[i][j];					
-			current_tile->get_astar_info().mark_path = false;
-			current_tile->get_astar_info().reset();
-		}
-	}
-
 	return tail;
 }
 
@@ -459,14 +437,4 @@ Tile* Tilemap::get_tile_from_worldpos(float x, float y)
 {
 	clan::Point p = world_to_tilemap_position(x, y);
 	return m_pTiles[p.x][p.y];
-}
-
-
-clan::Point Tilemap::get_worldpos_by_id(int id)
-{
-	clan::Point retval;
-	retval.x = (id % m_size) * m_tileSize;
-	retval.y = (id / m_size) * m_tileSize;
-
-	return retval;
 }
