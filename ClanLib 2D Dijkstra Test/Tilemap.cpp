@@ -57,7 +57,7 @@ void Tilemap::update(clan::InputContext ic)
 	{
 		if(kb.get_keycode(clan::keycode_space))
 		{
-			std::vector<Tile*> path = get_path_astar(0, 899);
+			std::vector<Tile*> path = get_path_astar(0, 899, true);
 			for(int i = 0; i < path.size(); i++)
 				path[i]->get_astar_info().mark_path = true;
 
@@ -184,6 +184,62 @@ std::vector<Tile*> Tilemap::get_adjacent_tiles(int id, bool walkable, bool diago
 		}
 	}
 
+	if(diagonal)
+	{
+		if(y != 0 && x != 0)
+		{
+			if(walkable)
+			{
+				if(m_pTiles[y-1][x-1]->is_walkable())
+					retval.push_back(m_pTiles[y-1][x-1]);
+			}
+			else
+			{
+				retval.push_back(m_pTiles[y-1][x-1]);
+			}
+		}
+
+		if(y != 0 && x != m_size - 1)
+		{
+			if(walkable)
+			{
+				if(m_pTiles[y-1][x+1]->is_walkable())
+					retval.push_back(m_pTiles[y-1][x+1]);
+			}
+			else
+			{
+				retval.push_back(m_pTiles[y-1][x+1]);
+			}
+		}
+
+		if(y != m_size - 1 && x != 0)
+		{
+			if(walkable)
+			{
+				if(m_pTiles[y+1][x-1]->is_walkable())
+					retval.push_back(m_pTiles[y+1][x-1]);
+			}
+			else
+			{
+				retval.push_back(m_pTiles[y+1][x-1]);
+			}
+		}
+
+		if(y != m_size - 1 && x != m_size - 1)
+		{
+			if(walkable)
+			{
+				if(m_pTiles[y+1][x+1]->is_walkable())
+					retval.push_back(m_pTiles[y+1][x+1]);
+			}
+			else
+			{
+				retval.push_back(m_pTiles[y+1][x+1]);
+			}
+		}
+	}
+
+
 	return retval;
 }
 
@@ -242,7 +298,7 @@ void Tilemap::fill_rect_wall(int start_id, int end_id)
 }
 
 
-std::vector<Tile*> Tilemap::get_path_astar(int start_id, int end_id)
+std::vector<Tile*> Tilemap::get_path_astar(int start_id, int end_id, bool allow_diagonal_movement)
 {
 	// determines whether the search was successfull
 	bool success = false;
@@ -286,7 +342,7 @@ std::vector<Tile*> Tilemap::get_path_astar(int start_id, int end_id)
 		current_tile->get_astar_info().visited = true;
 
 		// For each adjacent tile of the current tile that is also not a wall
-		std::vector<Tile*> adj_tiles = current_tile->get_adjacent_tiles(true, true);
+		std::vector<Tile*> adj_tiles = current_tile->get_adjacent_tiles(true, allow_diagonal_movement);
 		for(int i = 0; i < adj_tiles.size(); i++)
 		{
 			Tile* t = adj_tiles[i];

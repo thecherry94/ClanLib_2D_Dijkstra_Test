@@ -36,6 +36,6 @@ class Tilemap
 		void fill_rect_wall_by_arraypos(int start_x, int start_y, int end_x, int end_y);
 
 
-		std::vector<Tile*> get_path_astar(int start_id, int end_id);
+		std::vector<Tile*> get_path_astar(int start_id, int end_id, bool allow_diagonal_movement);
 
 };
