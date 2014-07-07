@@ -15,12 +15,14 @@ int App::main(const std::vector<std::string>& args)
 	Tilemap map;
 	map.build_map(30);
 
+	clan::GameTime game_time;
 	while(!win.get_ic().get_keyboard().get_keycode(clan::keycode_escape))
 	{
+		game_time.update();
 		canvas.clear();
 
 		map.draw(canvas);
-		map.update(win.get_ic());
+		map.update(win.get_ic(), game_time.get_time_elapsed());
 
 		win.flip();
 		clan::KeepAlive::process();

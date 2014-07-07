@@ -4,6 +4,7 @@
 #include "Tilemap.hpp"
 #include "AStarInfo.hpp"
 
+class TilemapWalker;
 class AStarInfo;
 class Tilemap;
 class Tile
