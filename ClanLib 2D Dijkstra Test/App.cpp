@@ -12,8 +12,10 @@ int App::main(const std::vector<std::string>& args)
 	clan::DisplayWindow win(desc);
 	clan::Canvas canvas(win);
 	
+	m_canvas = canvas; 
+
 	Tilemap map;
-	map.build_map(30);
+	map.build_map(31);
 
 	clan::GameTime game_time;
 	while(!win.get_ic().get_keyboard().get_keycode(clan::keycode_escape))
@@ -32,3 +34,5 @@ int App::main(const std::vector<std::string>& args)
 
 	return 0;
 }
+
+clan::Canvas App::m_canvas;

@@ -1,6 +1,7 @@
 #include "Tilemap.hpp"
-#include <fstream>
-
+#include <algorithm>
+#include <time.h>
+#include "App.hpp"
 
 Tilemap::Tilemap()
 {
@@ -25,6 +26,10 @@ void Tilemap::build_map(int size)
 			m_pTiles[i][j]->init(this, get_id_by_array_pos(i, j), true);
 		}
 	}
+
+	std::vector<Tile*> adj = get_adjacent_tiles2(70);
+	for(int i = 0; i < adj.size(); i++)
+		adj[i]->set_walkable(false);
 }
 
 
@@ -65,7 +70,7 @@ void Tilemap::update(clan::InputContext ic, float delta)
 
 			space = true;
 
-			m_mapWalker->start_walk(get_worldpos_by_id(899));
+			m_mapWalker->start_walk(get_worldpos_by_id(960));
 		}
 	}
 	else
@@ -252,6 +257,37 @@ std::vector<Tile*> Tilemap::get_adjacent_tiles(int id, bool walkable, bool diago
 }
 
 
+std::vector<Tile*> Tilemap::get_adjacent_tiles2(int id)
+{
+	int x = id % (m_size);
+	int y = id / (m_size);
+	std::vector<Tile*> retval;
+
+
+	if(y - 1 != 0)
+	{
+		retval.push_back(m_pTiles[y-2][x]);
+	}
+
+	if(y != m_size - 2)
+	{
+		retval.push_back(m_pTiles[y+2][x]);
+	}
+
+	if(x - 1 != 0)
+	{
+		retval.push_back(m_pTiles[y][x-2]);	
+	}
+
+	if(x != m_size - 2)
+	{
+		retval.push_back(m_pTiles[y][x+2]);	
+	}
+
+	return retval;
+}
+
+
 void Tilemap::make_rect_wall(int start_id, int end_id)
 {
 	if(start_id > m_size * m_size || end_id > m_size * m_size)
@@ -320,8 +356,8 @@ std::vector<Tile*> Tilemap::get_path_astar(int start_id, int end_id, bool allow_
 	int goal_y = end_id / (m_size);
 
 	// Create two lists; open and closed; add the start tile to the open list
-	std::list<Tile*> open;
-	std::list<Tile*> closed;
+	std::vector<Tile*> open;
+	std::vector<Tile*> closed;
 	open.push_back(start_tile);
 
 
@@ -331,7 +367,7 @@ std::vector<Tile*> Tilemap::get_path_astar(int start_id, int end_id, bool allow_
 		// Get tile with the lowest F score from the open list
 		int lowest_fscore = (*open.begin())->get_astar_info().F();
 		Tile* lowest_fscore_tile = (*open.begin());
-		std::list<Tile*>::iterator it;
+		std::vector<Tile*>::iterator it;
 		for(it = open.begin(); it != open.end(); it++)
 		{
 			Tile* t = *it;
@@ -345,7 +381,7 @@ std::vector<Tile*> Tilemap::get_path_astar(int start_id, int end_id, bool allow_
 		// Move the current tile to the closed list and mark it as visited
 		// already visited tiles will never be visited again
 		Tile* current_tile = lowest_fscore_tile;	
-		open.remove(current_tile);
+		open.erase(std::remove(open.begin(), open.end(), current_tile), open.end());
 		closed.push_back(current_tile);
 		current_tile->get_astar_info().visited = true;
 
@@ -420,7 +456,7 @@ std::vector<Tile*> Tilemap::make_path_recursively(Tile* tile, std::vector<Tile*>
 	std::reverse(tail.begin(), tail.end());
 
 
-	// All tiles need to be reset in order for the algorithm to work again
+	// All tiles need to be reset in order for the astar algorithm to work again
 	//
 	for(int i = 0; i < m_size; i++)
 	{
@@ -433,6 +469,242 @@ std::vector<Tile*> Tilemap::make_path_recursively(Tile* tile, std::vector<Tile*>
 	}
 
 	return tail;
+}
+
+
+// This algorithm fucking sucks and can't do anything useful
+//
+void Tilemap::make_maze_custom()
+{
+	Tile* start_tile = m_pTiles[0][0];
+	std::vector<Tile*> open;
+	std::vector<Tile*> closed;
+
+	open.push_back(start_tile);
+
+	// Make all tiles walls
+	for(int i = 0; i < m_size; i++)
+	{
+		for(int j = 0; j < m_size; j++)
+		{
+			Tile* current_tile = m_pTiles[i][j];
+			current_tile->set_walkable(false);
+		}
+	}
+
+	start_tile->set_walkable(true);
+
+	srand(time(NULL));
+
+	// While the open set has elements
+	while(!open.empty())
+	{
+		// Return a random tile from the open set
+		//Tile* current_tile = open[rand() % open.size()];
+		Tile* current_tile = open.back();
+
+		// Set the current tile as visited and move it into the closed list
+		current_tile->get_cst_maze_info().visited = true;
+		open.erase(std::find(open.begin(), open.end(), current_tile), open.end());
+		closed.push_back(current_tile);
+
+		// Iterate through all adjacent tiles of the current tile; whether they be walls or not
+		std::vector<Tile*> adj_tiles = current_tile->get_adjacent_tiles(false, false);
+		for(int i = 0; i < adj_tiles.size(); i++)
+		{
+			Tile* curr_adj_tile = adj_tiles[i];
+
+			// If the adjacent tile isn't neither on the open nor on the closed list
+			if (std::find(open.begin(), open.end(), curr_adj_tile) == open.end() &&
+			    std::find(closed.begin(), closed.end(), curr_adj_tile) == closed.end())
+			{
+				/*
+				// Add it to the open set and mark it as visited
+				open.push_back(curr_adj_tile);
+				curr_adj_tile->get_cst_maze_info().visited = true;
+				curr_adj_tile->get_cst_maze_info().previous_tile = current_tile;
+				*/
+
+				// Get the relation between the current tile and the adjecent current tile
+				TileRelation rel = get_relation(current_tile, curr_adj_tile);
+
+				// Get the tile array position
+				clan::Point adj_array_pos = curr_adj_tile->get_array_pos();
+
+				// Whether or not the wall will be removed
+				bool remove_wall = true;
+
+
+				/* The following if clause will check whether there are walls on the side of the tile
+				 * depending on the relation of the current tile and the current adjacent tile
+				 * if there are walls on both side, the wall of the current adjecent tile will be removed
+				 * and it will be added to the open set
+				 */
+
+				// If they are vertically aligned
+				if(rel == TileRelation::DOWN || rel == TileRelation::UP)
+				{
+					// If there is an element on the left side
+					if(adj_array_pos.x - 1 > 0)
+					{
+						// If there is no wall on the side, don't remove the wall on this tile
+						if(m_pTiles[adj_array_pos.x-1][adj_array_pos.y]->is_walkable())
+							remove_wall = false;
+					}
+
+					// If there is an element on the right side
+					if(adj_array_pos.x + 1 != m_size)
+					{
+						// If there is no wall on the side, don't remove the wall on this tile
+						if(m_pTiles[adj_array_pos.x+1][adj_array_pos.y]->is_walkable())
+							remove_wall = false;
+					}
+
+				}
+				// If they are horizontally aligned
+				else if(rel == TileRelation::LEFT || rel == TileRelation::RIGHT)
+				{
+					// If there is an element above
+					if(adj_array_pos.y - 1 > 0)
+					{
+						// If there is no wall on the side, don't remove the wall on this tile
+						if(m_pTiles[adj_array_pos.x][adj_array_pos.y-1]->is_walkable())
+							remove_wall = false;
+					}
+
+					// If there is an element below
+					if(adj_array_pos.y + 1 != m_size)
+					{
+						// If there is no wall on the side, don't remove the wall on this tile
+						if(m_pTiles[adj_array_pos.x][adj_array_pos.y+1]->is_walkable())
+							remove_wall = false;
+					}
+				}
+
+				// If the wall should be removed
+				if(remove_wall)
+				{
+					// Add the current adjacent tile to the open set
+					open.push_back(curr_adj_tile);
+					curr_adj_tile->get_cst_maze_info().previous_tile = current_tile;
+
+					// Finally remove the wall
+					curr_adj_tile->set_walkable(true);
+				}
+				// If the wall should not be removed
+				else
+				{
+					// Add the current adjacent tile to the closed set
+					closed.push_back(curr_adj_tile);
+					curr_adj_tile->get_cst_maze_info().previous_tile = current_tile;
+				}
+			}
+		}
+	}
+}
+
+
+// This method uses the depth first search algorithm to create a maze
+//
+void Tilemap::make_maze_depthfirst()
+{
+	// Make all tiles walls
+	for(int i = 0; i < m_size; i++)
+	{
+		for(int j = 0; j < m_size; j++)
+		{
+			Tile* current_tile = m_pTiles[i][j];
+			current_tile->set_walkable(false);
+		}
+	}
+
+	// Create a queue of tiles to go trough
+	std::vector<Tile*> open;
+
+	// Select a random tile as starting point
+	srand(time(NULL));
+	Tile* start_tile = get_tile_by_id((2*rand()) % (m_size * m_size));
+
+	Tile* current_tile = start_tile;
+
+	// While there are tiles in the queue
+	do 
+	{
+		open.push_back(current_tile);
+		current_tile->get_cst_maze_info().visited = true;
+
+		fuck:
+		// Get all adjacent tiles of the current tile
+		std::vector<Tile*> adj_tiles = get_adjacent_tiles2(current_tile->get_id());
+
+		// Sort out all tiles that have already been visited
+		std::vector<Tile*>::iterator it = adj_tiles.begin();
+		while(it != adj_tiles.end())
+		{
+			Tile* t = *it;
+
+			if(t->get_cst_maze_info().visited)
+				it = adj_tiles.erase(it);
+			else
+				it++;
+		}
+
+		// if there are none adjacent tile that haven't been visited
+		if(adj_tiles.empty())
+		{
+			if(open.empty())
+				return;
+
+			srand(time(NULL));
+			current_tile = open[rand() % open.size()];
+			open.erase(std::remove(open.begin(), open.end(), current_tile), open.end());
+			goto fuck;
+		}
+
+		// Select a random adjacent tile
+		srand(time(NULL));
+		Tile* adj_tile = adj_tiles[rand() % adj_tiles.size()];
+
+		// Get relation between current tile and adjacent tile
+		TileRelation rel = get_relation(current_tile, adj_tile);
+
+		switch (rel)
+		{
+			case UP:
+				get_tile_by_id(current_tile->get_id() - m_size)->set_walkable(true);
+			break;
+
+			case RIGHT:
+				get_tile_by_id(current_tile->get_id() + 1)->set_walkable(true);
+			break;
+
+			case LEFT:
+				get_tile_by_id(current_tile->get_id() - 1)->set_walkable(true);
+			break;
+
+			case DOWN:
+				get_tile_by_id(current_tile->get_id() + m_size)->set_walkable(true);
+			break;
+		}
+
+		current_tile = adj_tile;
+	} while(!open.empty());
+}
+
+
+TileRelation Tilemap::get_relation(Tile* a, Tile* b)
+{
+	clan::Point p_a = a->get_array_pos();
+	clan::Point p_b = b->get_array_pos();
+
+	if(p_a.y < p_b.y)
+		return TileRelation::DOWN;
+	if(p_a.y > p_b.y)
+		return TileRelation::UP;
+	if(p_a.x < p_b.x)
+		return TileRelation::RIGHT;
+	if(p_a.x > p_b.x)
+		return TileRelation::LEFT;
 }
 
 

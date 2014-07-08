@@ -4,6 +4,18 @@
 #include "Tilemap.hpp"
 #include "AStarInfo.hpp"
 
+struct CustomMazeInfo
+{
+	bool visited;
+	Tile* previous_tile;
+
+	CustomMazeInfo()
+	{
+		visited = false;
+		previous_tile = NULL;
+	}
+};
+
 class TilemapWalker;
 class AStarInfo;
 class Tilemap;
@@ -14,6 +26,7 @@ class Tile
 		Tilemap* m_pTilemap;
 		bool m_walkable;
 		AStarInfo m_astarInfo;
+		CustomMazeInfo m_mazeInfo;
 
 	public:
 		Tile();
@@ -27,4 +40,7 @@ class Tile
 		std::vector<Tile*> get_adjacent_tiles(bool walkable, bool diagonal);
 
 		AStarInfo& get_astar_info() { return m_astarInfo; }
+		CustomMazeInfo& get_cst_maze_info() { return m_mazeInfo; }
+
+		clan::Point get_array_pos();
 };
